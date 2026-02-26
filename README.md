@@ -50,6 +50,15 @@ This MCP server provides functionality to fetch web content in various formats, 
     - `start_index` (number, optional): Used together with max_length to retrieve contents piece by piece, 0 by default
   - Returns the content of the webpage converted to Markdown format
 
+- **fetch_readable**
+  - Fetch a website and return its main content parsed by Mozilla Readability, converted to Markdown
+  - Input:
+    - `url` (string, required): URL of the website to fetch
+    - `headers` (object, optional): Custom headers to include in the request
+    - `max_length` (number, optional): Maximum length to fetch (default 5000, can change via environment variable)
+    - `start_index` (number, optional): Used together with max_length to retrieve contents piece by piece, 0 by default
+  - Returns the main article content of the webpage as Markdown (ideal for articles and blog posts)
+
 ### Resources
 
 This server does not provide any persistent resources. It's designed to fetch and transform web content on demand.
