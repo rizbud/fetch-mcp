@@ -1,12 +1,15 @@
 import { Fetcher } from "./Fetcher";
 import { JSDOM } from "jsdom";
 import TurndownService from "turndown";
+import { Readability } from "@mozilla/readability";
 
 global.fetch = jest.fn();
 
 jest.mock("jsdom");
 
 jest.mock("turndown");
+
+jest.mock("@mozilla/readability");
 
 describe("Fetcher", () => {
   beforeEach(() => {
@@ -129,6 +132,79 @@ describe("Fetcher", () => {
           {
             type: "text",
             text: "Failed to fetch https://example.com: Parsing error",
+          },
+        ],
+        isError: true,
+      });
+    });
+  });
+
+  describe("readable", () => {
+    it("should return readable content as markdown", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        text: jest.fn().mockResolvedValueOnce(mockHtml),
+      });
+
+      const mockArticle = {
+        title: "Test Page",
+        content: "<h1>Hello World</h1><p>This is a test paragraph.</p>",
+      };
+      // @ts-expect-error Mocking JSDOM
+      (JSDOM as jest.Mock).mockImplementationOnce(() => ({
+        window: { document: {} },
+      }));
+      (Readability as jest.Mock).mockImplementationOnce(() => ({
+        parse: jest.fn().mockReturnValueOnce(mockArticle),
+      }));
+
+      const mockMarkdown = "# Hello World\n\nThis is a test paragraph.";
+      (TurndownService as jest.Mock).mockImplementationOnce(() => ({
+        turndown: jest.fn().mockReturnValueOnce(mockMarkdown),
+      }));
+
+      const result = await Fetcher.readable(mockRequest);
+      expect(result).toEqual({
+        content: [{ type: "text", text: mockMarkdown }],
+        isError: false,
+      });
+    });
+
+    it("should return an error when Readability cannot parse the page", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        text: jest.fn().mockResolvedValueOnce(mockHtml),
+      });
+
+      // @ts-expect-error Mocking JSDOM
+      (JSDOM as jest.Mock).mockImplementationOnce(() => ({
+        window: { document: {} },
+      }));
+      (Readability as jest.Mock).mockImplementationOnce(() => ({
+        parse: jest.fn().mockReturnValueOnce(null),
+      }));
+
+      const result = await Fetcher.readable(mockRequest);
+      expect(result).toEqual({
+        content: [
+          {
+            type: "text",
+            text: "Failed to parse readable content from the page",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it("should handle errors", async () => {
+      (fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+
+      const result = await Fetcher.readable(mockRequest);
+      expect(result).toEqual({
+        content: [
+          {
+            type: "text",
+            text: "Failed to fetch https://example.com: Network error",
           },
         ],
         isError: true,
