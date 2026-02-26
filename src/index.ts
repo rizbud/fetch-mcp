@@ -132,6 +132,33 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["url"],
         },
       },
+      {
+        name: "fetch_readable",
+        description:
+          "Fetch a website and return its main content parsed by Mozilla Readability, converted to Markdown. Ideal for articles and blog posts.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            url: {
+              type: "string",
+              description: "URL of the website to fetch",
+            },
+            headers: {
+              type: "object",
+              description: "Optional headers to include in the request",
+            },
+            max_length: {
+              type: "number",
+              description: `Maximum number of characters to return (default: ${downloadLimit})`,
+            },
+            start_index: {
+              type: "number",
+              description: "Start content from this character index (default: 0)",
+            },
+          },
+          required: ["url"],
+        },
+      },
     ],
   };
 });
@@ -155,6 +182,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
   if (request.params.name === "fetch_markdown") {
     const fetchResult = await Fetcher.markdown(validatedArgs);
+    return fetchResult;
+  }
+  if (request.params.name === "fetch_readable") {
+    const fetchResult = await Fetcher.readable(validatedArgs);
     return fetchResult;
   }
   throw new Error("Tool not found");

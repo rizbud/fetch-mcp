@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import TurndownService from "turndown";
 import is_ip_private from "private-ip";
+import { Readability } from "@mozilla/readability";
 import { RequestPayload } from "./types.js";
 
 export class Fetcher {
@@ -116,6 +117,38 @@ export class Fetcher {
         content: [{ type: "text", text: normalizedText }],
         isError: false,
       };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: (error as Error).message }],
+        isError: true,
+      };
+    }
+  }
+
+  static async readable(requestPayload: RequestPayload) {
+    try {
+      const response = await this._fetch(requestPayload);
+      const html = await response.text();
+
+      const dom = new JSDOM(html, { url: requestPayload.url });
+      const reader = new Readability(dom.window.document);
+      const article = reader.parse();
+
+      if (!article) {
+        throw new Error("Failed to parse readable content from the page");
+      }
+
+      const turndownService = new TurndownService();
+      let content = turndownService.turndown(article.content ?? "");
+
+      // Apply length limits
+      content = this.applyLengthLimits(
+        content,
+        requestPayload.max_length ?? 5000,
+        requestPayload.start_index ?? 0
+      );
+
+      return { content: [{ type: "text", text: content }], isError: false };
     } catch (error) {
       return {
         content: [{ type: "text", text: (error as Error).message }],

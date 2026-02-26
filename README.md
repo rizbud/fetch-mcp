@@ -50,6 +50,15 @@ This MCP server provides functionality to fetch web content in various formats, 
     - `start_index` (number, optional): Used together with max_length to retrieve contents piece by piece, 0 by default
   - Returns the content of the webpage converted to Markdown format
 
+- **fetch_readable**
+  - Fetch a website and return its main article content as Markdown, parsed by Mozilla Readability. Strips away navigation, ads, and other boilerplate so AI agents receive only the core content.
+  - Input:
+    - `url` (string, required): URL of the website to fetch
+    - `headers` (object, optional): Custom headers to include in the request
+    - `max_length` (number, optional): Maximum length to fetch (default 5000, can change via environment variable)
+    - `start_index` (number, optional): Used together with max_length to retrieve contents piece by piece, 0 by default
+  - Returns the distilled article content converted to Markdown format
+
 ### Resources
 
 This server does not provide any persistent resources. It's designed to fetch and transform web content on demand.
@@ -98,9 +107,10 @@ To integrate this server with a desktop app, add the following to your app's ser
 
 - Fetches web content using modern fetch API
 - Supports custom headers for requests
-- Provides content in multiple formats: HTML, JSON, plain text, and Markdown
+- Provides content in multiple formats: HTML, JSON, plain text, Markdown, and Readable (via Mozilla Readability)
 - Uses JSDOM for HTML parsing and text extraction
 - Uses TurndownService for HTML to Markdown conversion
+- Uses Mozilla Readability for extracting clean article content
 
 ## Development
 
